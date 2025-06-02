@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Wheels Of Fortune</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #000;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+
+    #logo {
+      max-width: 300px;
+    }
+
+    .wheel-container {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      margin: 30px auto;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 10px solid orange;
+    }
+
+    .pointer {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-bottom: 20px solid white;
+      z-index: 2;
+    }
+
+    #spinBtn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: orange;
+      color: black;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #result {
+      font-size: 24px;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <img id="logo" src="logo.jpg" alt="June Gaming Logo">
+  <h1>Spin the Wheels Of Fortune!</h1>
+
+  <div class="wheel-container">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="300" height="300"></canvas>
+  </div>
+
+  <button id="spinBtn">SPIN</button>
+  <div id="result"></div>
+
+  <script>
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
+    const spinBtn = document.getElementById("spinBtn");
+    const result = document.getElementById("result");
+
+    // Update this string when you change prizes
+    const wheelVersion = "v2"; 
+    const storedVersion = localStorage.getItem("wheelVersion");
+
+    if (storedVersion !== wheelVersion) {
+      localStorage.removeItem("hasSpun");
+      localStorage.removeItem("bonusResult");
+      localStorage.setItem("wheelVersion", wheelVersion);
+    }
+
+    const bonuses = ["5$ FREE SPIN", "20$ FREE SPIN", "30% BONUS", "40% BONUS", "50% BONUS", "10$ FREE SPIN", "100% BONUS"];
+    const colors = ["#FFA500", "#FFB84D"];
+    const total = bonuses.length;
+    let spinning = false;
+    let hasSpun = localStorage.getItem("hasSpun") === "true";
+
+    const drawWheel = () => {
+      const arc = (2 * Math.PI) / total;
+      for (let i = 0; i < total; i++) {
+        const angle = i * arc;
+        ctx.beginPath();
+        ctx.fillStyle = colors[i % 2];
+        ctx.moveTo(150, 150);
+        ctx.arc(150, 150, 150, angle, angle + arc);
+        ctx.fill();
+
+        // Draw text
+        ctx.save();
+        ctx.translate(150, 150);
+        ctx.rotate(angle + arc / 2);
+        ctx.fillStyle = "#000";
+        ctx.font = "bold 14px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(bonuses[i], 100, 0);
+        ctx.restore();
+      }
+    };
+
+    drawWheel();
+
+    if (hasSpun) {
+      spinBtn.disabled = true;
+      result.textContent = `You already spun and got: ${localStorage.getItem("bonusResult")}`;
+    }
+
+    let angle = 0;
+
+    spinBtn.onclick = () => {
+      if (spinning || hasSpun) return;
+
+      spinning = true;
+      const randomDeg = 360 * 5 + Math.floor(Math.random() * 360);
+      angle += randomDeg;
+
+      canvas.style.transition = "transform 4s ease-out";
+      canvas.style.transform = `rotate(${angle}deg)`;
+
+      const finalDeg = randomDeg % 360;
+      const arcSize = 360 / total;
+      const index = Math.round((360 - finalDeg) % 360 / arcSize) % total;
+      const selected = bonuses[index];
+
+      setTimeout(() => {
+        result.textContent = `You won a ${selected} bonus!`;
+        localStorage.setItem("hasSpun", "true");
+        localStorage.setItem("bonusResult", selected);
+        spinBtn.disabled = true;
+        spinning = false;
+      }, 4200);
+    };
+  </script>
+</body>
+</html>
